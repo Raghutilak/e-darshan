@@ -1,0 +1,14 @@
+node_modules/
+inspection_photos/
+sringar_629/
+test_639/
+page-640.html
+mangala.jpg
+inspect_photos.py
+inspect_sringar.py
+test_639.py
+package-lock.json
+package.json
+server.js
+__pycache__/
+*.pyc
