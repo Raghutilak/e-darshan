@@ -12,3 +12,4 @@ package.json
 server.js
 __pycache__/
 *.pyc
+update_darshan_backup.py
