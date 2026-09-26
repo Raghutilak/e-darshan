@@ -5,10 +5,11 @@ import re
 from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
-
 import cv2
 import numpy as np
 from playwright.sync_api import sync_playwright
+import sys
+import time
 
 BASE_DIR = Path(__file__).resolve().parent
 ANCHOR_DATE = date(2026, 9, 24)
@@ -104,6 +105,65 @@ def load_gallery(page, kind, page_number):
     if len(gallery) < 3:
         raise RuntimeError(f"{kind}: fewer than 3 real gallery photos found")
     return gallery
+
+def load_target_gallery_until_ready(
+    page,
+    kind,
+    page_number,
+):
+    attempt = 1
+    while True:
+        print()
+        print(
+            f"{kind}: checking page {page_number} "
+            f"(attempt {attempt})"
+        )
+
+        try:
+            gallery = load_gallery(
+                page,
+                kind,
+                page_number,
+            )
+        except RuntimeError as error:
+            print(
+                f"{kind}: gallery not ready yet."
+            )
+            print(
+                f"Reason: {error}"
+            )
+            print(
+                "Retrying in 10 minutes..."
+            )
+            time.sleep(600)
+            attempt += 1
+            continue
+        landscape_count = sum(
+            1
+            for item in gallery
+            if item["width"] > item["height"]
+        )
+        print(
+            f"{kind}: "
+            f"{len(gallery)} real photos, "
+            f"{landscape_count} landscape photos"
+        )
+        if landscape_count >= 3:
+
+            print(
+                f"{kind}: gallery ready."
+            )
+
+            return gallery
+        print(
+            f"{kind}: fewer than 3 landscape "
+            f"photos available."
+        )
+        print(
+            "Retrying in 10 minutes..."
+        )
+        time.sleep(600)
+        attempt += 1
 
 
 def load_bootstrap_references(page, kind, reference_page, positions):
@@ -304,7 +364,7 @@ def save_selected(kind, selected):
 
 def process_kind(page, kind, target_page):
     references = get_references(page, kind, target_page)
-    gallery = load_gallery(page, kind, target_page)
+    gallery = load_target_gallery_until_ready( page, kind, target_page, )
     candidates = [item for item in gallery if item["width"] > item["height"]]
 
     print(f"{kind}: landscape candidates for page {target_page}: {len(candidates)}")
@@ -332,28 +392,70 @@ def process_kind(page, kind, target_page):
 
 
 def main():
+
+    if len(sys.argv) > 1:
+        requested_kind = sys.argv[1].lower()
+    else:
+        requested_kind = "both"
+
+    if requested_kind not in {
+        "mangala",
+        "sringar",
+        "both",
+    }:
+        raise RuntimeError(
+            "Usage: python update_darshan.py "
+            "[mangala|sringar|both]"
+        )
+
     print("========================================")
     print("ISKCON Juhu Daily Darshan Updater")
     print("Rolling previous-day visual matcher")
     print("========================================")
+
     print(f"India date: {today}")
     print(f"Days from anchor: {days_from_anchor}")
-    print(f"Mangala page: {mangala_page}")
-    print(f"Sringar page: {sringar_page}")
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1440, "height": 1200})
+
+        browser = playwright.chromium.launch(
+            headless=True
+        )
+
+        page = browser.new_page(
+            viewport={
+                "width": 1440,
+                "height": 1200,
+            }
+        )
+
         try:
-            process_kind(page, "mangala", mangala_page)
-            process_kind(page, "sringar", sringar_page)
+            if requested_kind in {
+                "mangala",
+                "both",
+            }:
+                process_kind(
+                    page,
+                    "mangala",
+                    mangala_page,
+                )
+            if requested_kind in {
+                "sringar",
+                "both",
+            }:
+                process_kind(
+                    page,
+                    "sringar",
+                    sringar_page,
+                )
         finally:
             browser.close()
-
-    print("\n========================================")
+    print()
+    print("========================================")
     print("Update completed successfully.")
     print("========================================")
 
 
 if __name__ == "__main__":
     main()
+
