@@ -33,9 +33,24 @@ jobs:
         run: |
           python -m playwright install --with-deps chromium
 
-      - name: Update Mangala
+      - name: Update Mangala with 10-minute retries
         run: |
-          python update_darshan.py mangala
+          for attempt in {1..36}; do
+            echo "Attempt $attempt of 36 - $(date -u)"
+
+            if python update_darshan.py mangala; then
+              echo "Mangala update succeeded."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 36 ]; then
+              echo "Mangala photos not ready yet. Waiting 10 minutes..."
+              sleep 600
+            fi
+          done
+
+          echo "Mangala update failed after 36 attempts."
+          exit 1
 
       - name: Commit Mangala photos
         run: |

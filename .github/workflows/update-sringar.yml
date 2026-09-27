@@ -33,9 +33,24 @@ jobs:
         run: |
           python -m playwright install --with-deps chromium
 
-      - name: Update Sringar
+      - name: Update Sringar with 10-minute retries
         run: |
-          python update_darshan.py sringar
+          for attempt in {1..36}; do
+            echo "Attempt $attempt of 36 - $(date -u)"
+
+            if python update_darshan.py sringar; then
+              echo "Sringar update succeeded."
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 36 ]; then
+              echo "Sringar photos not ready yet. Waiting 10 minutes..."
+              sleep 600
+            fi
+          done
+
+          echo "Sringar update failed after 36 attempts."
+          exit 1
 
       - name: Commit Sringar photos
         run: |
