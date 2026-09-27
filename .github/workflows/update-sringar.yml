@@ -3,12 +3,8 @@ name: Update Sringar Darshan
 on:
   workflow_dispatch:
 
-  # schedule:
-  #   - cron: "30 7 * * *"
-  #     timezone: "Asia/Kolkata"
-
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "30 7 * * *"
       timezone: "Asia/Kolkata"
 
 permissions:
