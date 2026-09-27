@@ -8,9 +8,8 @@ on:
   #     timezone: "Asia/Kolkata"
 
   schedule:
-    - cron: "45 10 * * *"
+    - cron: "*/5 * * * *"
       timezone: "Asia/Kolkata"
-
 
 permissions:
   contents: write
