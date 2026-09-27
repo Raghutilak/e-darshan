@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
 
   schedule:
-    - cron: "30 7 * * *"
+    - cron: "0 4 * * *"   # once daily, ~9:30 AM IST — adjust to just before Sringar darshan normally posts
       timezone: "Asia/Kolkata"
 
 permissions:
   contents: write
+
+concurrency:
+  group: update-sringar
+  cancel-in-progress: false
 
 jobs:
   update-sringar:
@@ -65,3 +69,37 @@ jobs:
             git commit -m "Update Sringar Darshan photos"
             git push
           fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
