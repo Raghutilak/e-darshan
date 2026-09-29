@@ -10,10 +10,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: update-sringar
-  cancel-in-progress: false
-
 jobs:
   update-sringar:
     runs-on: ubuntu-latest
