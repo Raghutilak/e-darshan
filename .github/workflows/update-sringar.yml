@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
   schedule:
-    - cron: "0 4 * * *"   # once daily, ~9:30 AM IST — adjust to just before Sringar darshan normally posts
+    - cron: "0 4 * * *"
       timezone: "Asia/Kolkata"
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
 jobs:
   update-sringar:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 75
 
     steps:
       - name: Checkout repository
@@ -33,24 +33,9 @@ jobs:
         run: |
           python -m playwright install --with-deps chromium
 
-      - name: Update Sringar with 10-minute retries
+      - name: Update Sringar
         run: |
-          for attempt in {1..36}; do
-            echo "Attempt $attempt of 36 - $(date -u)"
-
-            if python update_darshan.py sringar; then
-              echo "Sringar update succeeded."
-              exit 0
-            fi
-
-            if [ "$attempt" -lt 36 ]; then
-              echo "Sringar photos not ready yet. Waiting 10 minutes..."
-              sleep 600
-            fi
-          done
-
-          echo "Sringar update failed after 36 attempts."
-          exit 1
+          python update_darshan.py sringar
 
       - name: Commit Sringar photos
         run: |
@@ -65,37 +50,3 @@ jobs:
             git commit -m "Update Sringar Darshan photos"
             git push
           fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

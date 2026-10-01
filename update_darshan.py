@@ -110,13 +110,14 @@ def load_target_gallery_until_ready(
     page,
     kind,
     page_number,
+    max_attempts=6,
+    retry_delay=600,
 ):
-    attempt = 1
-    while True:
+    for attempt in range(1, max_attempts + 1):
         print()
         print(
             f"{kind}: checking page {page_number} "
-            f"(attempt {attempt})"
+            f"(attempt {attempt} of {max_attempts})"
         )
 
         try:
@@ -132,39 +133,50 @@ def load_target_gallery_until_ready(
             print(
                 f"Reason: {error}"
             )
-            print(
-                "Retrying in 10 minutes..."
-            )
-            time.sleep(600)
-            attempt += 1
-            continue
+
+            if attempt < max_attempts:
+                print(
+                    f"Retrying in {retry_delay // 60} minutes..."
+                )
+                time.sleep(retry_delay)
+                continue
+
+            raise RuntimeError(
+                f"{kind}: gallery not ready after "
+                f"{max_attempts} attempts."
+            ) from error
+
         landscape_count = sum(
             1
             for item in gallery
             if item["width"] > item["height"]
         )
         print(
-            f"{kind}: "
-            f"{len(gallery)} real photos, "
-            f"{landscape_count} landscape photos"
+            f"{kind}: found {len(gallery)} images, "
+            f"{landscape_count} landscape images."
         )
+
         if landscape_count >= 3:
-
-            print(
-                f"{kind}: gallery ready."
-            )
-
             return gallery
-        print(
-            f"{kind}: fewer than 3 landscape "
-            f"photos available."
-        )
-        print(
-            "Retrying in 10 minutes..."
-        )
-        time.sleep(600)
-        attempt += 1
 
+        if attempt < max_attempts:
+            print(
+                f"{kind}: fewer than 3 landscape images."
+            )
+            print(
+                f"Retrying in {retry_delay // 60} minutes..."
+            )
+            time.sleep(retry_delay)
+            continue
+
+        raise RuntimeError(
+            f"{kind}: fewer than 3 landscape images "
+            f"after {max_attempts} attempts."
+        )
+
+    raise RuntimeError(
+        f"{kind}: gallery could not be loaded."
+    )
 
 def load_bootstrap_references(page, kind, reference_page, positions):
     gallery = load_gallery(page, kind, reference_page)
@@ -364,7 +376,12 @@ def save_selected(kind, selected):
 
 def process_kind(page, kind, target_page):
     references = get_references(page, kind, target_page)
-    gallery = load_target_gallery_until_ready( page, kind, target_page, )
+    gallery = load_target_gallery_until_ready(
+        page,
+        kind,
+        target_page,
+        max_attempts=6 if kind == "sringar" else 3,
+    )
     candidates = [item for item in gallery if item["width"] > item["height"]]
 
     print(f"{kind}: landscape candidates for page {target_page}: {len(candidates)}")

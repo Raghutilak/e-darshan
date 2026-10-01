@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-mangala
+  cancel-in-progress: false
+
 jobs:
   update-mangala:
     runs-on: ubuntu-latest
