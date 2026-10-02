@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
   schedule:
-    - cron: "30 5 * * *"
+    - cron: "45 5 * * *"
       timezone: "Asia/Kolkata"
 
 permissions:
@@ -17,7 +17,7 @@ concurrency:
 jobs:
   update-mangala:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 75
 
     steps:
       - name: Checkout repository
@@ -37,24 +37,9 @@ jobs:
         run: |
           python -m playwright install --with-deps chromium
 
-      - name: Update Mangala with 10-minute retries
+      - name: Update Mangala
         run: |
-          for attempt in {1..36}; do
-            echo "Attempt $attempt of 36 - $(date -u)"
-
-            if python update_darshan.py mangala; then
-              echo "Mangala update succeeded."
-              exit 0
-            fi
-
-            if [ "$attempt" -lt 36 ]; then
-              echo "Mangala photos not ready yet. Waiting 10 minutes..."
-              sleep 600
-            fi
-          done
-
-          echo "Mangala update failed after 36 attempts."
-          exit 1
+          python update_darshan.py mangala
 
       - name: Commit Mangala photos
         run: |
